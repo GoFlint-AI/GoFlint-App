@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoFlint — Find what your GTM stack is hiding</title>
+<meta name="description" content="GoFlint connects to the tools your revenue team already runs and shows exactly where money and deals are slipping through. Join the waitlist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0C0B0A; --ink2:#161410; --ink3:#1F1C17; --ink4:#292420;
+  --paper:#F6F3EC; --char:#93897B; --char-dim:#5C574C;
+  --ember:#E85D26; --ember-hot:#FF8A52; --ember-dim:#7A3417;
+  --teal:#2FBF8F;
+  --line: rgba(246,243,236,0.09);
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} }
+body{ background:var(--ink); color:var(--paper); font-family:var(--font-body); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+a{color:inherit;text-decoration:none;}
+::selection{background:var(--ember);color:var(--ink);}
+.wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
+img,svg{display:block;}
+button{font-family:inherit;cursor:pointer;border:none;}
+input{font-family:inherit;}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- BRAND ---------- */
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:linear-gradient(135deg, var(--ember) 0%, var(--ember-hot) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 4px 16px rgba(232,93,38,0.35);
+}
+.brand-mark svg{width:16px;height:16px; transform:rotate(4deg); filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25));}
+.brand-name{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-0.01em;}
+.brand-name .wm-go{font-weight:500;color:var(--char);}
+.brand-name .wm-flint{font-weight:800;color:var(--paper);}
+
+/* ---------- NAV ---------- */
+nav{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between;
+  padding:16px 32px; backdrop-filter:blur(14px); background:rgba(12,11,10,0.72);
+  border-bottom:1px solid transparent; transition:border-color .3s ease;
+}
+nav.scrolled{border-bottom-color:var(--line);}
+.nav-links{display:flex;align-items:center;gap:30px;}
+.nav-links a.nl{font-size:13.5px; color:var(--char); transition:color .2s;}
+.nav-links a.nl:hover{color:var(--paper);}
+.nav-cta{
+  background:var(--paper); color:var(--ink); font-size:13px; font-weight:600; padding:9px 18px;
+  border-radius:99px; transition:background .2s, transform .2s;
+}
+.nav-cta:hover{background:var(--ember-hot); transform:translateY(-1px);}
+@media (max-width:760px){ .nav-links a.nl{display:none;} }
+
+/* ---------- HERO ---------- */
+.hero{position:relative; padding:96px 0 0; overflow:hidden; text-align:center;}
+.hero-glow{
+  position:absolute; top:-260px; left:50%; transform:translateX(-50%); width:900px; height:640px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(232,93,38,0.20) 0%, rgba(232,93,38,0) 68%);
+  pointer-events:none; z-index:0;
+}
+.hero-inner{position:relative; z-index:2; max-width:760px; margin:0 auto;}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--ember-hot); border:1px solid rgba(232,93,38,0.3); background:rgba(232,93,38,0.08);
+  padding:6px 13px; border-radius:99px; margin-bottom:26px;
+}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--ember-hot); animation:pulse-dot 1.8s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+.hero h1{
+  font-family:var(--font-display); font-weight:700; font-size:54px; line-height:1.08; letter-spacing:-0.025em;
+  margin-bottom:22px;
+}
+.grad-word{
+  background:linear-gradient(100deg, var(--ember-hot) 10%, var(--ember) 45%, #FFBB8C 75%, var(--ember-hot) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+@media (max-width:760px){ .hero h1{font-size:38px;} }
+.hero-sub{font-size:17px; line-height:1.65; color:var(--char); max-width:520px; margin:0 auto 34px;}
+.hero-sub strong{color:var(--paper); font-weight:500;}
+.hero-actions{display:flex; flex-direction:column; align-items:center; gap:14px; margin-bottom:14px;}
+.waitlist-form{display:flex; gap:10px; max-width:440px; width:100%;}
+@media (max-width:480px){ .waitlist-form{flex-direction:column;} }
+.waitlist-form input{
+  flex:1; background:var(--ink2); border:1px solid var(--line); color:var(--paper); font-size:14.5px;
+  padding:14px 16px; border-radius:10px; outline:none; transition:border-color .2s;
+}
+.waitlist-form input::placeholder{color:var(--char-dim);}
+.waitlist-form input:focus{border-color:var(--ember);}
+.waitlist-btn{
+  background:var(--ember); color:var(--ink); font-size:14.5px; font-weight:700; padding:14px 24px;
+  border-radius:10px; white-space:nowrap; transition:background .2s, transform .2s; flex-shrink:0;
+}
+.waitlist-btn:hover{background:var(--ember-hot); transform:translateY(-1px);}
+.ghost-btn{
+  background:transparent; border:1px solid var(--line); color:var(--paper); font-size:13.5px; font-weight:600;
+  padding:12px 20px; border-radius:10px; transition:border-color .2s, background .2s;
+}
+.ghost-btn:hover{border-color:var(--char-dim); background:var(--ink2);}
+.waitlist-success{display:none; align-items:center; gap:8px; font-size:14px; color:var(--teal); font-weight:500; padding-top:4px;}
+.waitlist-success.show{display:flex;}
+.waitlist-note{font-size:12px; color:var(--char-dim); margin-bottom:64px;}
+
+/* Hero product screenshot */
+.hero-shot-wrap{position:relative; max-width:940px; margin:0 auto; padding:0 20px;}
+.hero-shot-glow{position:absolute; inset:-80px 20px; background:radial-gradient(ellipse at 50% 20%, rgba(232,93,38,0.18), transparent 60%); pointer-events:none;}
+.hero-shot{
+  position:relative; z-index:2; border-radius:16px 16px 0 0; overflow:hidden; border:1px solid var(--line); border-bottom:none;
+  background:var(--ink3); box-shadow:0 -10px 0 rgba(0,0,0,0), 0 40px 90px -20px rgba(0,0,0,0.75);
+}
+.hs-topbar{display:flex; align-items:center; gap:7px; padding:12px 18px; border-bottom:1px solid var(--line);}
+.hs-dot{width:9px;height:9px;border-radius:50%;background:var(--char-dim);}
+.hs-shell{display:flex; min-height:360px; text-align:left;}
+.hs-side{width:180px; background:var(--ink); padding:20px 16px; border-right:1px solid var(--line); flex-shrink:0;}
+.hs-side .app-sb-logo{margin-bottom:22px;}
+.hs-nav{font-size:12px; color:var(--char); padding:9px 10px; border-radius:8px; margin-bottom:3px; display:flex; align-items:center; gap:8px;}
+.hs-nav.active{background:var(--ink3); color:var(--paper);}
+.hs-dot2{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.6;}
+.hs-main{flex:1; padding:24px 26px; min-width:0;}
+.hs-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px;}
+.hs-stat{background:var(--ink); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
+.hs-stat .pv{font-family:var(--font-mono); font-size:19px; font-weight:600; color:var(--paper);}
+.hs-stat .pl{font-size:10px; color:var(--char); margin-top:4px;}
+.hs-table{width:100%; border-collapse:collapse; font-size:12px; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+.hs-table th{text-align:left; background:var(--ink); color:var(--char); font-size:10px; text-transform:uppercase; letter-spacing:0.03em; padding:9px 14px; font-weight:600;}
+.hs-table td{padding:9px 14px; border-top:1px solid var(--line); color:var(--paper);}
+.hs-pill{font-size:9.5px; font-weight:700; padding:2px 8px; border-radius:99px;}
+.hs-pill.hi{background:rgba(217,64,64,0.15); color:#F0908C;}
+.hs-pill.lo{background:rgba(47,191,143,0.15); color:#7FE0BE;}
+.hs-pill.md{background:rgba(239,159,39,0.18); color:#F7C978;}
+
+.float-chip{
+  position:absolute; z-index:5; background:var(--ink4); border:1px solid var(--line); border-radius:12px;
+  padding:12px 18px; box-shadow:0 20px 50px -18px rgba(0,0,0,0.7); display:flex; align-items:center; gap:10px;
+  opacity:0; transform:translateY(10px) scale(0.96); transition:opacity .5s ease, transform .5s ease;
+}
+.float-chip.show{opacity:1; transform:translateY(0) scale(1);}
+.float-chip.top-right{top:-26px; right:6%;}
+@media (max-width:700px){ .float-chip.top-right{position:static; margin:16px auto 0; transform:none; display:none;} .float-chip.top-right.show{display:flex;} }
+.fc-spark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--ember),var(--ember-hot)); display:flex;align-items:center;justify-content:center; flex-shrink:0;}
+.fc-spark svg{width:15px;height:15px;}
+.fc-num{font-family:var(--font-mono); font-weight:600; font-size:16px; color:var(--paper); text-align:left;}
+.fc-label{font-size:9.5px; color:var(--char); text-align:left;}
+
+/* ---------- SECTIONS shared ---------- */
+section{padding:96px 0;}
+.section-head{max-width:640px; margin-bottom:52px;}
+.section-head.center{margin-left:auto; margin-right:auto; text-align:center;}
+.section-eyebrow{font-size:11.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--ember-hot); margin-bottom:14px;}
+.section-title{font-family:var(--font-display); font-weight:600; font-size:32px; letter-spacing:-0.02em; line-height:1.15;}
+.section-title .accent{color:var(--ember);}
+.section-body{font-size:15px; color:var(--char); line-height:1.7; margin-top:14px;}
+
+.reveal{opacity:0; transform:translateY(22px); transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);}
+.reveal.in-view{opacity:1; transform:translateY(0);}
+.reveal-delay-1{transition-delay:.08s;} .reveal-delay-2{transition-delay:.16s;} .reveal-delay-3{transition-delay:.24s;}
+
+/* ---------- PROBLEM ---------- */
+.problem{background:var(--ink2); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.problem-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+@media (max-width:760px){ .problem-grid{grid-template-columns:1fr;} }
+.problem-card{background:var(--ink); border:1px solid var(--line); border-radius:18px; padding:32px 30px;}
+.problem-card .pc-icon{width:38px;height:38px;border-radius:10px;background:var(--ink3);display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.problem-card .pc-icon svg{width:18px;height:18px;stroke:var(--ember-hot);}
+.problem-card h3{font-family:var(--font-display); font-weight:600; font-size:18px; margin-bottom:10px; letter-spacing:-0.01em;}
+.problem-card p{font-size:14px; color:var(--char); line-height:1.65;}
+
+/* ---------- HOW IT WORKS ---------- */
+.how-list{position:relative;}
+.how-step{display:grid; grid-template-columns:56px 1fr; gap:22px; padding:28px 0; border-top:1px solid var(--line);}
+.how-step:last-child{border-bottom:1px solid var(--line);}
+.how-n{font-family:var(--font-mono); font-size:13px; color:var(--ember-hot); font-weight:600; padding-top:2px;}
+.how-body h3{font-family:var(--font-display); font-weight:600; font-size:19px; margin-bottom:7px; letter-spacing:-0.01em;}
+.how-body p{font-size:14px; color:var(--char); line-height:1.7; max-width:520px;}
+
+/* ---------- BENTO ---------- */
+.bento{background:var(--ink2); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.bento-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media (max-width:760px){ .bento-grid{grid-template-columns:1fr;} }
+.bento-card{background:var(--ink); border:1px solid var(--line); border-radius:16px; padding:22px 24px; overflow:hidden; position:relative;}
+.bento-card .bc-icon{width:16px;height:16px; stroke:var(--ember-hot); margin-bottom:14px;}
+.bento-card h3{font-family:var(--font-display); font-weight:600; font-size:15.5px; margin-bottom:5px;}
+.bento-card p{font-size:12.5px; color:var(--char); line-height:1.6; max-width:280px;}
+.bento-visual{margin-top:16px; height:110px; border-radius:10px; background:var(--ink2); border:1px solid var(--line); position:relative; overflow:hidden;}
+
+/* mini visuals inside bento */
+.mv-inbox{padding:10px;}
+.mv-inbox-row{display:flex; align-items:center; gap:8px; background:var(--ink3); border-radius:7px; padding:6px 9px; margin-bottom:6px; font-size:9.5px; color:var(--char);}
+.mv-inbox-dot{width:6px;height:6px;border-radius:50%;background:var(--teal); flex-shrink:0;}
+.mv-alert{padding:12px;}
+.mv-alert-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.mv-alert-badge{width:20px;height:20px;border-radius:6px;background:rgba(217,64,64,0.18); display:flex;align-items:center;justify-content:center; flex-shrink:0;}
+.mv-alert-badge svg{width:10px;height:10px; stroke:#F0908C;}
+.mv-alert-text{font-size:9.5px; color:var(--char);}
+.mv-graph{display:flex; align-items:center; justify-content:center; height:100%; gap:22px;}
+.mv-node{width:34px;height:34px;border-radius:50%; background:var(--ink3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:8px; color:var(--char); position:relative; z-index:2;}
+.mv-node.center{background:var(--ember); color:var(--ink); font-weight:700; border-color:var(--ember-hot);}
+.mv-line{position:absolute; height:1px; background:var(--line); z-index:1;}
+.mv-cal{padding:12px; display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+.mv-cal-cell{aspect-ratio:1; border-radius:3px; background:var(--ink3);}
+.mv-cal-cell.hit{background:var(--ember-dim);}
+
+/* ---------- USE CASES TABS ---------- */
+.tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:36px;}
+.tab{
+  font-size:12.5px; font-weight:500; color:var(--char); padding:8px 16px; border-radius:99px; border:1px solid var(--line);
+  background:transparent; transition:all .2s;
+}
+.tab.active{background:var(--paper); color:var(--ink); border-color:var(--paper);}
+.tab:not(.active):hover{border-color:var(--char-dim); color:var(--paper);}
+.uc-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+@media (max-width:900px){ .uc-grid{grid-template-columns:1fr 1fr;} }
+@media (max-width:640px){ .uc-grid{grid-template-columns:1fr;} }
+.uc-card{background:var(--ink2); border:1px solid var(--line); border-radius:16px; padding:24px; transition:opacity .25s, transform .25s;}
+.uc-card.hidden{display:none;}
+.uc-tag{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.05em; color:var(--ember-hot); background:rgba(232,93,38,0.1); border:1px solid rgba(232,93,38,0.25); padding:3px 9px; border-radius:99px; margin-bottom:14px; text-transform:uppercase;}
+.uc-card h3{font-family:var(--font-display); font-weight:600; font-size:16.5px; margin-bottom:8px; letter-spacing:-0.01em;}
+.uc-card p{font-size:13px; color:var(--char); line-height:1.6;}
+
+/* ---------- PERSONAS ---------- */
+.personas-row{display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; margin:0 -32px; padding-left:32px; padding-right:32px; scrollbar-width:none;}
+.personas-row::-webkit-scrollbar{display:none;}
+.persona-card{
+  flex:0 0 240px; background:var(--ink2); border:1px solid var(--line); border-radius:16px; padding:22px 20px;
+}
+.persona-role{font-family:var(--font-mono); font-size:10.5px; color:var(--ember-hot); font-weight:600; letter-spacing:0.02em; margin-bottom:12px;}
+.persona-card p{font-size:13.5px; color:var(--paper); line-height:1.6; margin-bottom:10px;}
+.persona-card .pq{font-size:12px; color:var(--char);}
+
+/* ---------- PRICING ---------- */
+.pricing-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+@media (max-width:760px){ .pricing-grid{grid-template-columns:1fr;} }
+.price-card{background:var(--ink2); border:1px solid var(--line); border-radius:20px; padding:34px 30px; position:relative;}
+.price-card.hi{border-color:rgba(232,93,38,0.35); background:linear-gradient(180deg, rgba(232,93,38,0.06), transparent 40%), var(--ink2);}
+.price-badge{position:absolute; top:-11px; right:28px; background:var(--ember); color:var(--ink); font-size:10px; font-weight:700; padding:4px 11px; border-radius:99px; letter-spacing:0.02em;}
+.price-tier{font-family:var(--font-display); font-weight:600; font-size:18px; margin-bottom:6px;}
+.price-value{font-family:var(--font-mono); font-size:32px; font-weight:600; margin-bottom:2px;}
+.price-value .pv-sub{font-family:var(--font-body); font-size:13px; color:var(--char); font-weight:400;}
+.price-desc{font-size:13px; color:var(--char); line-height:1.6; margin:12px 0 22px;}
+.price-list{list-style:none; margin-bottom:26px;}
+.price-list li{display:flex; align-items:flex-start; gap:9px; font-size:13px; color:var(--paper); padding:7px 0; border-top:1px solid var(--line);}
+.price-list li:first-child{border-top:none;}
+.price-list svg{width:14px;height:14px; stroke:var(--teal); flex-shrink:0; margin-top:2px;}
+.price-cta{display:block; text-align:center; padding:12px; border-radius:10px; font-size:13.5px; font-weight:600;}
+.price-cta.solid{background:var(--ember); color:var(--ink); transition:background .2s;}
+.price-cta.solid:hover{background:var(--ember-hot);}
+.price-cta.outline{background:transparent; border:1px solid var(--line); color:var(--paper); transition:border-color .2s;}
+.price-cta.outline:hover{border-color:var(--char-dim);}
+.price-note{font-size:11.5px; color:var(--char-dim); margin-top:32px; text-align:center;}
+
+/* ---------- ROADMAP ---------- */
+.roadmap{background:var(--ink2); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.rm-row{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+@media (max-width:760px){ .rm-row{grid-template-columns:1fr;} }
+.rm-card{background:var(--ink); border:1px solid var(--line); border-radius:16px; padding:24px;}
+.rm-status{font-size:9.5px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; padding:3px 9px; border-radius:99px; display:inline-block; margin-bottom:16px;}
+.rm-status.now{background:rgba(47,191,143,0.15); color:#7FE0BE;}
+.rm-status.next{background:rgba(239,159,39,0.15); color:#F7C978;}
+.rm-status.then{background:var(--ink3); color:var(--char);}
+.rm-card h3{font-family:var(--font-display); font-weight:600; font-size:16.5px; margin-bottom:8px;}
+.rm-card p{font-size:13px; color:var(--char); line-height:1.6;}
+
+/* ---------- CONTACT ---------- */
+.contact-box{
+  display:flex; align-items:center; justify-content:space-between; gap:24px; background:var(--ink2); border:1px solid var(--line);
+  border-radius:18px; padding:32px 36px; flex-wrap:wrap;
+}
+.contact-box h3{font-family:var(--font-display); font-weight:600; font-size:19px; margin-bottom:6px;}
+.contact-box p{font-size:13.5px; color:var(--char);}
+.contact-email{
+  font-family:var(--font-mono); font-size:14px; font-weight:600; background:var(--ink); border:1px solid var(--line);
+  padding:12px 20px; border-radius:10px; color:var(--paper); transition:border-color .2s, color .2s; flex-shrink:0;
+}
+.contact-email:hover{border-color:var(--ember); color:var(--ember-hot);}
+
+/* ---------- FINAL CTA ---------- */
+.final-cta{text-align:center; padding:120px 0;}
+.final-cta h2{font-family:var(--font-display); font-weight:700; font-size:40px; letter-spacing:-0.025em; margin-bottom:16px;}
+@media (max-width:600px){ .final-cta h2{font-size:30px;} }
+.final-cta .section-body{margin:0 auto 36px; max-width:460px; text-align:center; font-size:14.5px;}
+.final-cta .waitlist-form{margin:0 auto 14px;}
+.final-cta .waitlist-note{max-width:440px; margin:0 auto;}
+
+/* ---------- FOOTER ---------- */
+footer{border-top:1px solid var(--line); padding:36px 0;}
+.footer-row{display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;}
+.footer-tag{font-size:12.5px; color:var(--char-dim);}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="brand">
+    <div class="brand-mark"><svg viewBox="0 0 28 28" fill="none"><path d="M18 3L8 15h8l-6 10 14-14h-8L18 3z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/></svg></div>
+    <div class="brand-name"><span class="wm-go">Go</span><span class="wm-flint">Flint</span></div>
+  </div>
+  <div class="nav-links">
+    <a href="#product" class="nl">Product</a>
+    <a href="#pricing" class="nl">Pricing</a>
+    <a href="#contact" class="nl">Contact</a>
+    <a href="#join" class="nav-cta">Join waitlist</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="wrap hero-inner">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>Now building — early access open</div>
+    <h1>Find what your GTM<br>stack is <span class="grad-word">hiding.</span></h1>
+    <p class="hero-sub">GoFlint connects to the tools your revenue team already runs and turns them into two answers nobody has fast today: <strong>where you're overspending</strong>, and <strong>which deals are going cold.</strong></p>
+    <div class="hero-actions">
+      <form class="waitlist-form" id="waitlistForm">
+        <input type="email" placeholder="you@company.com" required aria-label="Work email">
+        <button type="submit" class="waitlist-btn">Join the waitlist</button>
+      </form>
+      <a href="#product" class="ghost-btn">See how it works ↓</a>
+    </div>
+    <div class="waitlist-success" id="waitlistSuccess">✓ You're on the list — we'll email you at launch.</div>
+    <p class="waitlist-note">Free scan first. No credit card. See your number in under a minute.</p>
+  </div>
+
+  <div class="wrap hero-shot-wrap">
+    <div class="hero-shot-glow"></div>
+    <div class="float-chip top-right" id="floatChip">
+      <div class="fc-spark"><svg viewBox="0 0 28 28" fill="none"><path d="M18 3L8 15h8l-6 10 14-14h-8L18 3z" fill="white"/></svg></div>
+      <div><div class="fc-num" id="fcNum">₹0</div><div class="fc-label">found this scan</div></div>
+    </div>
+    <div class="hero-shot reveal" id="product">
+      <div class="hs-topbar"><div class="hs-dot"></div><div class="hs-dot"></div><div class="hs-dot"></div></div>
+      <div class="hs-shell">
+        <div class="hs-side">
+          <div class="app-sb-logo brand"><div class="brand-mark" style="width:24px;height:24px;border-radius:6px;"><svg viewBox="0 0 28 28" fill="none" style="width:13px;height:13px;"><path d="M18 3L8 15h8l-6 10 14-14h-8L18 3z" fill="white"/></svg></div><div class="brand-name" style="font-size:13px;"><span class="wm-go">Go</span><span class="wm-flint">Flint</span></div></div>
+          <div class="hs-nav active"><span class="hs-dot2"></span>Stack Audit</div>
+          <div class="hs-nav"><span class="hs-dot2"></span>Deal Health</div>
+          <div class="hs-nav"><span class="hs-dot2"></span>Settings</div>
+        </div>
+        <div class="hs-main">
+          <div class="hs-stats">
+            <div class="hs-stat"><div class="pv">₹42,500</div><div class="pl">Total monthly stack cost</div></div>
+            <div class="hs-stat"><div class="pv">₹18,200</div><div class="pl">Waste identified</div></div>
+            <div class="hs-stat"><div class="pv">₹2,140</div><div class="pl">Cost per closed deal</div></div>
+          </div>
+          <table class="hs-table">
+            <thead><tr><th>Tool</th><th>Utilization</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>Apollo</td><td>27%</td><td><span class="hs-pill hi">Downgrade</span></td></tr>
+              <tr><td>Gong</td><td>58%</td><td><span class="hs-pill md">Review</span></td></tr>
+              <tr><td>HubSpot</td><td>81%</td><td><span class="hs-pill lo">Keep</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="problem">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">The gap</div>
+      <h2 class="section-title">Two questions nobody in revenue<br>can answer <span class="accent">fast.</span></h2>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <div class="pc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>What is this stack actually costing us?</h3>
+        <p>Redundant seats, overlapping tools, subscriptions nobody remembers signing up for. The answer is sitting in your inbox right now — nobody's opened it in months.</p>
+      </div>
+      <div class="problem-card reveal reveal-delay-1">
+        <div class="pc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+        <h3>Which deals are quietly dying?</h3>
+        <p>By the time a deal shows up as "lost" in the CRM, it's been cold for weeks. The signal was there the whole time — just never assembled into one place.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-title">Three steps. No new<br>tool to learn.</h2>
+    </div>
+    <div class="how-list">
+      <div class="how-step reveal">
+        <div class="how-n">01</div>
+        <div class="how-body"><h3>Connect</h3><p>Link Gmail, HubSpot, and Apollo in a few clicks. Nothing to configure, nothing to migrate.</p></div>
+      </div>
+      <div class="how-step reveal reveal-delay-1">
+        <div class="how-n">02</div>
+        <div class="how-body"><h3>GoFlint finds it</h3><p>We turn data you already have into a plain-English number — what's wasted, and what's at risk of going cold.</p></div>
+      </div>
+      <div class="how-step reveal reveal-delay-2">
+        <div class="how-n">03</div>
+        <div class="how-body"><h3>You act</h3><p>Cancel what's not working, save what's about to die — before the quarter closes, not after.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bento">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Always on</div>
+      <h2 class="section-title">Watching your GTM stack,<br>even when you're not.</h2>
+    </div>
+    <div class="bento-grid">
+      <div class="bento-card reveal">
+        <svg class="bc-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 6l8 6 8-6"/></svg>
+        <h3>Connected inbox</h3>
+        <p>Reads invoice emails automatically — no manual upload, no spreadsheet to maintain.</p>
+        <div class="bento-visual mv-inbox">
+          <div class="mv-inbox-row"><span class="mv-inbox-dot"></span>Apollo — Invoice for July</div>
+          <div class="mv-inbox-row"><span class="mv-inbox-dot"></span>HubSpot — Receipt #4021</div>
+          <div class="mv-inbox-row"><span class="mv-inbox-dot"></span>Gong — Monthly billing</div>
+        </div>
+      </div>
+      <div class="bento-card reveal reveal-delay-1">
+        <svg class="bc-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <h3>Instant risk alerts</h3>
+        <p>Get pinged the moment a deal's decay score crosses your threshold — not at the quarterly review.</p>
+        <div class="bento-visual mv-alert">
+          <div class="mv-alert-row"><div class="mv-alert-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="mv-alert-text">Priya Nair — risk jumped to High</div></div>
+          <div class="mv-alert-row"><div class="mv-alert-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div><div class="mv-alert-text">Rohan Kapoor — no reply in 12 days</div></div>
+        </div>
+      </div>
+      <div class="bento-card reveal reveal-delay-2">
+        <svg class="bc-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 9V6.5M9.5 10.5 6.5 7.5M14.5 10.5l3-3M14.5 13.5l3 3"/></svg>
+        <h3>Works with your stack</h3>
+        <p>HubSpot, Apollo, and Gmail today — more connectors as we hear what you actually run.</p>
+        <div class="bento-visual mv-graph">
+          <div class="mv-node center">GF</div>
+          <div class="mv-node">CRM</div>
+        </div>
+      </div>
+      <div class="bento-card reveal reveal-delay-3">
+        <svg class="bc-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+        <h3>Weekly digest</h3>
+        <p>One email every Monday: what changed, what's new at risk, what to look at first.</p>
+        <div class="bento-visual mv-cal" id="miniCal"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="use-cases">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="section-eyebrow">Real-world use cases</div>
+      <h2 class="section-title">Built for how revenue<br>actually works.</h2>
+    </div>
+    <div class="tabs reveal" id="tabs" style="justify-content:center;">
+      <button class="tab active" data-cat="all">All</button>
+      <button class="tab" data-cat="founders">Founders</button>
+      <button class="tab" data-cat="revops">RevOps</button>
+      <button class="tab" data-cat="sales">Sales Leaders</button>
+      <button class="tab" data-cat="finance">Finance</button>
+    </div>
+    <div class="uc-grid reveal">
+      <div class="uc-card" data-cat="finance"><div class="uc-tag">Finance</div><h3>Recover wasted spend</h3><p>Find the 15–30% of GTM tool spend nobody's using, with a number specific enough to put in a board deck.</p></div>
+      <div class="uc-card" data-cat="sales"><div class="uc-tag">Sales Leaders</div><h3>Catch deals before they die</h3><p>See which deals are going cold days before they'd show up lost in the CRM — while there's still time to act.</p></div>
+      <div class="uc-card" data-cat="revops"><div class="uc-tag">RevOps</div><h3>One source of truth for stack health</h3><p>Stop reconciling five dashboards to answer "is this tool actually worth what we pay for it."</p></div>
+      <div class="uc-card" data-cat="founders"><div class="uc-tag">Founders</div><h3>Run GTM without a RevOps hire yet</h3><p>Get the stack visibility a RevOps lead would give you, before you can justify hiring one.</p></div>
+      <div class="uc-card" data-cat="finance"><div class="uc-tag">Finance</div><h3>Answer the board question in advance</h3><p>Walk into the meeting already knowing what CAC-efficiency looks like this quarter, not scrambling the night before.</p></div>
+      <div class="uc-card" data-cat="revops"><div class="uc-tag">RevOps</div><h3>Justify the next renewal — or don't</h3><p>Get a defensible number before every contract renewal instead of renewing on autopilot.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="personas-section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Who it's for</div>
+      <h2 class="section-title">Built for the people who<br>feel this first.</h2>
+    </div>
+  </div>
+  <div class="personas-row reveal">
+    <div class="persona-card"><div class="persona-role">FOUNDER, DOING SALES YOURSELF</div><p>You're closing deals and running the stack at the same time — you don't have hours to audit either.</p><div class="pq">Wants: one number, not a dashboard to learn.</div></div>
+    <div class="persona-card"><div class="persona-role">VP SALES</div><p>You find out a deal died in the pipeline review, not while there was still time to save it.</p><div class="pq">Wants: the warning, days earlier.</div></div>
+    <div class="persona-card"><div class="persona-role">REVOPS</div><p>You own the stack, but "is this tool worth it" still means opening five different dashboards.</p><div class="pq">Wants: one place that already has the answer.</div></div>
+    <div class="persona-card"><div class="persona-role">CRO / CFO</div><p>You approve the renewals. Nobody's ever shown you what they're actually producing.</p><div class="pq">Wants: the ROI number, before the invoice.</div></div>
+    <div class="persona-card"><div class="persona-role">SDR / BDR</div><p>You're the one actually using the tools daily — and the first to know which seats nobody touches.</p><div class="pq">Wants: less noise, more signal.</div></div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-title">Simple, honest pricing.</h2>
+      <p class="section-body">No 4-tier maze. Two things: a free scan, and the full product at founding-customer pricing while we're in early access.</p>
+    </div>
+    <div class="pricing-grid reveal">
+      <div class="price-card">
+        <div class="price-tier">Ghost Seat Scan</div>
+        <div class="price-value">Free</div>
+        <p class="price-desc">See unused SaaS seats in your inbox in under a minute. No signup required.</p>
+        <ul class="price-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Gmail scan, read-only</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Results in under a minute</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>No credit card, no account</li>
+        </ul>
+        <a href="#join" class="price-cta outline">Install free</a>
+      </div>
+      <div class="price-card hi">
+        <div class="price-badge">Early access</div>
+        <div class="price-tier">Full Stack Audit</div>
+        <div class="price-value">₹8,000<span class="pv-sub">–12,000/mo</span></div>
+        <p class="price-desc">Connect your real stack for the full waste breakdown, plus deal health monitoring.</p>
+        <ul class="price-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>HubSpot, Apollo, Gmail sync</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Full waste + savings dashboard</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Deal risk alerts</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Locked-in founding price</li>
+        </ul>
+        <a href="#join" class="price-cta solid">Join the waitlist</a>
+      </div>
+    </div>
+    <p class="price-note reveal">Founding-customer pricing is locked in for the life of your subscription — it goes up once we're out of early access.</p>
+  </div>
+</section>
+
+<section class="roadmap">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="section-eyebrow">Building in the open</div>
+      <h2 class="section-title">What's shipping, and when.</h2>
+    </div>
+    <div class="rm-row">
+      <div class="rm-card reveal"><div class="rm-status now">Now</div><h3>Ghost Seat Extension</h3><p>Free Chrome extension. Scans Gmail, shows unused SaaS seats instantly.</p></div>
+      <div class="rm-card reveal reveal-delay-1"><div class="rm-status next">Next</div><h3>GTM Spend Auditor</h3><p>Full stack audit, connected to HubSpot and Apollo, with per-tool ROI.</p></div>
+      <div class="rm-card reveal reveal-delay-2"><div class="rm-status then">Then</div><h3>Revenue Leak Detector</h3><p>Deal health monitoring layered on the same connected data.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div class="contact-box reveal">
+      <div><h3>Questions before you join?</h3><p>We read every email personally — no support queue yet, just us.</p></div>
+      <a href="mailto:hello@goflint.app" class="contact-email">hello@goflint.app</a>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="join">
+  <div class="wrap">
+    <div class="reveal">
+      <h2>Be first when<br>GoFlint opens up.</h2>
+      <p class="section-body">We're building this in the open — MVP first, then a first look for the waitlist before anyone else.</p>
+      <form class="waitlist-form" id="waitlistForm2">
+        <input type="email" placeholder="you@company.com" required aria-label="Work email">
+        <button type="submit" class="waitlist-btn">Join the waitlist</button>
+      </form>
+      <div class="waitlist-success" id="waitlistSuccess2">✓ You're on the list — we'll email you at launch.</div>
+      <p class="waitlist-note">One email when we launch. Nothing else.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <div class="brand">
+      <div class="brand-mark" style="width:24px;height:24px;border-radius:6px;"><svg viewBox="0 0 28 28" fill="none" style="width:13px;height:13px;"><path d="M18 3L8 15h8l-6 10 14-14h-8L18 3z" fill="white"/></svg></div>
+      <div class="brand-name" style="font-size:15px;"><span class="wm-go">Go</span><span class="wm-flint">Flint</span></div>
+    </div>
+    <div class="footer-tag">Spark the right conversation. © 2026 GoFlint.</div>
+  </div>
+</footer>
+
+<script>
+// ---- Nav scroll state ----
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => { nav.classList.toggle('scrolled', window.scrollY > 8); }, { passive:true });
+
+// ---- Scroll reveal ----
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ---- Mini calendar visual (bento) ----
+const cal = document.getElementById('miniCal');
+if (cal) {
+  const hits = new Set([3, 9, 14, 20]);
+  for (let i = 0; i < 21; i++) {
+    const c = document.createElement('div');
+    c.className = 'mv-cal-cell' + (hits.has(i) ? ' hit' : '');
+    cal.appendChild(c);
+  }
+}
+
+// ---- Hero float chip count-up ----
+function countUp(el, target, duration) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = '₹' + Math.round(target * eased).toLocaleString('en-IN');
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+window.addEventListener('load', () => {
+  const chip = document.getElementById('floatChip');
+  const num = document.getElementById('fcNum');
+  setTimeout(() => { chip.classList.add('show'); countUp(num, 18200, 900); }, 500);
+});
+
+// ---- Use-case tabs ----
+const tabs = document.querySelectorAll('.tab');
+const ucCards = document.querySelectorAll('.uc-card');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const cat = tab.dataset.cat;
+    ucCards.forEach(card => {
+      card.classList.toggle('hidden', cat !== 'all' && card.dataset.cat !== cat);
+    });
+  });
+});
+
+// ---- Waitlist forms (client-side only — see note below) ----
+// NOTE: this is a static page with no backend yet. Point the fetch() call
+// below at a real endpoint (Formspree, a serverless function, or your own
+// API once it exists) before this collects real signups.
+function wireWaitlistForm(formId, successId) {
+  const form = document.getElementById(formId);
+  const success = document.getElementById(successId);
+  if (!form) return;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    // await fetch('/api/waitlist', { method: 'POST', body: new FormData(form) });
+    form.style.display = 'none';
+    success.classList.add('show');
+  });
+}
+wireWaitlistForm('waitlistForm', 'waitlistSuccess');
+wireWaitlistForm('waitlistForm2', 'waitlistSuccess2');
+</script>
+</body>
+</html>
